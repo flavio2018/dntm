@@ -21,16 +21,6 @@ def read_write_consistency_regularizer(sequence_read_weights, sequence_write_wei
     return lambda_ * term.sum()
 
 
-def build_model(model_conf, device):
-    if model_conf.name == 'dntm':
-        return build_dntm(model_conf, device)
-    elif model_conf.name == 'mlp':
-        return build_mlp(model_conf, device)
-    elif model_conf.name == 'rnn':
-        return build_rnn(model_conf, device)
-    else:
-        return build_lstm(model_conf, device)
-
 def get_digit_string_repr(digit):
     repr = ''
     digit = (digit.view(28, 28) != 0).to(torch.int32)
