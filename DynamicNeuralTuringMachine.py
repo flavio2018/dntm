@@ -14,7 +14,7 @@ import torch.nn.functional as F
 
 import logging
 
-from CustomGRU import CustomGRU
+from model.dntm.CustomGRU import CustomGRU
 
 
 class DynamicNeuralTuringMachine(nn.Module):
