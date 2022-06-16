@@ -49,8 +49,9 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
         return self._full_memory_view()[:-1, :].T @ self.read_weights[:-1, :]
         # TODO add in tests NO-OP
 
-    def update(self, controller_hidden_state, controller_input):
+    def update(self, controller_hidden_state, controller_input, mask_current_pos):
         self.write_weights = self._address_memory(controller_hidden_state)
+        self.write_weights = self._mask_address(self.write_weights, mask_current_pos)
         erase_vector = self.W_erase @ controller_hidden_state + self.b_erase  # TODO MLP
 
         alpha = (self.u_input_content_alpha @ controller_input +
@@ -88,6 +89,15 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
             # logging.debug(f"{address_vector.isnan().any()=}")
 
         return address_vector
+
+    def _mask_address(self, address_vector, mask_current_pos=None):
+        if mask_current_pos is None:
+            return address_vector
+        else:
+            n_locations, batch_size = address_vector.shape
+            masks_cur_pos = mask_current_pos.unsqueeze(0)
+            tiled_mask = torch.tile(masks_cur_pos, (n_locations, 1))
+            return tiled_mask * address_vector
 
     def _full_memory_view(self):
         return torch.cat((self.memory_addresses, self.memory_contents), dim=1)

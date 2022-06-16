@@ -30,13 +30,13 @@ class DynamicNeuralTuringMachine(nn.Module):
 
         self._init_parameters(init_function=nn.init.xavier_uniform_)
 
-    def forward(self, input):
+    def forward(self, input, mask):
         if len(input.shape) == 2:
-            return self.step_on_batch_element(input)
+            return self.step_on_batch_element(input, mask)
         elif len(input.shape) == 3:
-            return self.step_on_batch(input)
+            return self.step_on_batch(input, mask)
 
-    def step_on_batch(self, batch):
+    def step_on_batch(self, batch, masks):
         """Note: the batch is assumed to conform to the batch_first convention of PyTorch, i.e. the first dimension of the batch
         is the batch size, the second one is the sequence length and the third one is the feature size."""
         logging.debug(f"Looping through image pixels")
@@ -49,13 +49,14 @@ class DynamicNeuralTuringMachine(nn.Module):
             logging.debug(f"{batch[:, i_seq, :]=}")
             logging.debug(f"{batch[:, i_seq, :].T=}")
             batch_element = batch[:, i_seq, :].reshape(feature_size, batch_size)
+            mask_current_pos = masks[:, i_seq]
             logging.debug(f"{batch_element=}")
-            controller_hidden_state, output = self.step_on_batch_element(batch_element)
+            controller_hidden_state, output = self.step_on_batch_element(batch_element, mask_current_pos)
             hidden_states.append(controller_hidden_state)
             outputs.append(output)
         return torch.stack(hidden_states), torch.stack(outputs)
 
-    def step_on_batch_element(self, x):
+    def step_on_batch_element(self, x, mask_current_pos):
         with torch.no_grad():
             logging.debug(f"{self.controller_hidden_state.isnan().any()=}")
             logging.debug(f"{self.controller_hidden_state.mean()=}")
@@ -63,7 +64,7 @@ class DynamicNeuralTuringMachine(nn.Module):
             logging.debug(f"{self.controller_hidden_state.min()=}")
 
         memory_reading = self.memory.read(self.controller_hidden_state)
-        self.memory.update(self.controller_hidden_state, x)
+        self.memory.update(self.controller_hidden_state, x, mask_current_pos)
         self.controller_hidden_state = self.controller(x, self.controller_hidden_state, memory_reading)
         output = F.log_softmax(self.W_output @ self.controller_hidden_state + self.b_output, dim=0)
         return self.controller_hidden_state, output
