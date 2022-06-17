@@ -63,7 +63,7 @@ class DynamicNeuralTuringMachine(nn.Module):
             logging.debug(f"{self.controller_hidden_state.min()=}")
 
         memory_reading = self.memory.read(self.controller_hidden_state)
-        self.memory.update(self.controller_hidden_state, x)
+        self.memory.update(self.controller_hidden_state, memory_reading, x)
         self.controller_hidden_state = self.controller(x, self.controller_hidden_state, memory_reading)
         output = F.log_softmax(self.W_output @ self.controller_hidden_state + self.b_output, dim=0)
         return self.controller_hidden_state, output

@@ -14,18 +14,17 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
         super(DynamicNeuralTuringMachineMemory, self).__init__()
 
         self.register_buffer("memory_contents", torch.zeros(size=(n_locations, content_size)))
-        # self.memory_contents = nn.Parameter(torch.zeros(size=(n_locations, content_size)), requires_grad=False)
-        self.memory_addresses = nn.Parameter(torch.zeros(size=(n_locations, address_size)), requires_grad=True)
+        self.memory_addresses = nn.Parameter(torch.zeros(size=(n_locations, address_size)))
         self.overall_memory_size = content_size + address_size
 
         self.W_hat_hidden = nn.Parameter(torch.zeros(size=(n_locations, controller_hidden_state_size)))
 
         # query vector MLP parameters (W_k, b_k)
-        self.W_query = nn.Parameter(torch.zeros(size=(n_locations, self.overall_memory_size)), requires_grad=True)
-        self.b_query = nn.Parameter(torch.zeros(size=(self.overall_memory_size, 1)), requires_grad=True)
+        self.W_query = nn.Parameter(torch.zeros(size=(n_locations, self.overall_memory_size)))
+        self.b_query = nn.Parameter(torch.zeros(size=(self.overall_memory_size, 1)))
 
         # sharpening parameters (u_beta, b_beta)
-        self.u_sharpen = nn.Parameter(torch.zeros(size=(controller_hidden_state_size, 1)), requires_grad=True)
+        self.u_sharpen = nn.Parameter(torch.zeros(size=(controller_hidden_state_size, 1)))
         self.b_sharpen = nn.Parameter(torch.zeros(1), requires_grad=True)
 
         # LRU parameters (u_gamma, b_gamma)
@@ -33,15 +32,11 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
         self.u_lru = nn.Parameter(torch.zeros(size=(controller_hidden_state_size, 1)))
 
         # erase parameters (generate e_t)
-        self.W_erase = nn.Parameter(torch.zeros(size=(content_size, controller_hidden_state_size)))
+        self.W_erase = nn.Parameter(torch.zeros(size=(content_size, controller_input_size + self.overall_memory_size)))
         self.b_erase = nn.Parameter(torch.zeros(size=(content_size, 1)))
 
-        # writing parameters (W_m, W_h, alpha)
-        self.W_content_hidden = nn.Parameter(torch.zeros(size=(content_size, controller_hidden_state_size)))
-        self.W_content_input = nn.Parameter(torch.zeros(size=(content_size, controller_input_size)))
-        self.u_input_content_alpha = nn.Parameter(torch.zeros(size=(1, controller_input_size)))
-        self.u_hidden_content_alpha = nn.Parameter(torch.zeros(size=(1, controller_hidden_state_size)))
-        self.b_content_alpha = nn.Parameter(torch.zeros(1))
+        # writing parameters
+        self.W_content = nn.Parameter(torch.zeros_like(self.W_erase))
 
     def read(self, controller_hidden_state):
         self.read_weights = self._address_memory(controller_hidden_state)
@@ -49,22 +44,17 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
         return self._full_memory_view()[:-1, :].T @ self.read_weights[:-1, :]
         # TODO add in tests NO-OP
 
-    def update(self, controller_hidden_state, controller_input):
+    def update(self, controller_hidden_state, memory_reading, controller_input):
         self.write_weights = self._address_memory(controller_hidden_state)
-        erase_vector = self.W_erase @ controller_hidden_state + self.b_erase  # TODO MLP
+        erase_vector = F.sigmoid(self.W_erase @ torch.cat((controller_input, memory_reading), dim=0) + self.b_erase)
 
-        alpha = (self.u_input_content_alpha @ controller_input +
-                 self.u_hidden_content_alpha @ controller_hidden_state + self.b_content_alpha)
-
-        candidate_content_vector = F.relu(self.W_content_hidden @ controller_hidden_state +
-                                          torch.mul(alpha, self.W_content_input @ controller_input))
-
+        candidate_content_vector = F.sigmoid(self.W_content @ torch.cat((controller_input, memory_reading), dim=0) + self.b_candidate)
+        
         # this implements the memory NO-OP at writing phase
         self.memory_contents[:-1, :] = (self.memory_contents[:-1, :]
                                         - self.write_weights[:-1, :] @ erase_vector.T
                                         + self.write_weights[:-1, :] @ candidate_content_vector.T)
         logging.debug(f"{erase_vector.isnan().any()=}")
-        logging.debug(f"{alpha.isnan().any()=}")
         logging.debug(f"{candidate_content_vector.isnan().any()=}")
         logging.debug(f"{self.memory_contents.element_size() * self.memory_contents.nelement()=}")
 
