@@ -49,7 +49,7 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
         self.write_weights = self._address_memory(controller_hidden_state)
         erase_vector = F.sigmoid(self.W_erase @ torch.cat((controller_input, memory_reading), dim=0) + self.b_erase)
 
-        candidate_content_vector = F.sigmoid(self.W_content @ torch.cat((controller_input, memory_reading), dim=0) + self.b_candidate)
+        candidate_content_vector = F.sigmoid(self.W_content @ torch.cat((controller_input, memory_reading), dim=0) + self.b_content)
         
         # this implements the memory NO-OP at writing phase
         self.memory_contents[:-1, :] = (self.memory_contents[:-1, :]
