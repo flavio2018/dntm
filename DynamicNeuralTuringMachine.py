@@ -14,8 +14,8 @@ import torch.nn.functional as F
 
 import logging
 
-from model.dntm.CustomGRU import CustomGRU
-from model.dntm.DynamicNeuralTuringMachineMemory import DynamicNeuralTuringMachineMemory
+from .CustomGRU import CustomGRU
+from .DynamicNeuralTuringMachineMemory import DynamicNeuralTuringMachineMemory
 
 
 class DynamicNeuralTuringMachine(nn.Module):
@@ -30,7 +30,7 @@ class DynamicNeuralTuringMachine(nn.Module):
 
         self._init_parameters(init_function=nn.init.xavier_uniform_)
 
-    def forward(self, input, mask):
+    def forward(self, input, mask=None):
         if len(input.shape) == 2:
             return self.step_on_batch_element(input, mask)
         elif len(input.shape) == 3:
@@ -49,7 +49,10 @@ class DynamicNeuralTuringMachine(nn.Module):
             logging.debug(f"{batch[:, i_seq, :]=}")
             logging.debug(f"{batch[:, i_seq, :].T=}")
             batch_element = batch[:, i_seq, :].reshape(feature_size, batch_size)
-            mask_current_pos = masks[:, i_seq]
+            if masks is not None:
+                mask_current_pos = masks[:, i_seq]
+            else:
+                mask_current_pos = None
             logging.debug(f"{batch_element=}")
             controller_hidden_state, output = self.step_on_batch_element(batch_element, mask_current_pos)
             hidden_states.append(controller_hidden_state)

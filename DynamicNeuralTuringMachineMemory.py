@@ -96,7 +96,7 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
         else:
             n_locations, batch_size = address_vector.shape
             masks_cur_pos = mask_current_pos.unsqueeze(0)
-            tiled_mask = torch.tile(masks_cur_pos, (n_locations, 1))
+            tiled_mask = torch.tile(masks_cur_pos, (n_locations, 1)).to(address_vector.device)
             return tiled_mask * address_vector
 
     def _full_memory_view(self):
