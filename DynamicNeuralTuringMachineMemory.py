@@ -37,6 +37,7 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
 
         # writing parameters
         self.W_content = nn.Parameter(torch.zeros_like(self.W_erase))
+        self.b_content = nn.Parameter(torch.zeros_like(self.b_erase))
 
     def read(self, controller_hidden_state):
         self.read_weights = self._address_memory(controller_hidden_state)
