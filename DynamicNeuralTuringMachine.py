@@ -107,7 +107,7 @@ class DynamicNeuralTuringMachine(nn.Module):
             self._write_weights_sequence.append(self.memory.write_weights[:, 0].detach().cpu())
 
     def get_addresses_sequences(self):
-        return torch.cat(self._read_weights_sequence, dim=1), torch.cat(self._write_weights_sequence, dim=1)
+        return torch.stack(self._read_weights_sequence, dim=1), torch.stack(self._write_weights_sequence, dim=1)
 
     def set_hidden_state(self, hidden_states, input_sequences_lengths, batch_size):
         """Use this to handle the case of diffenent-lengths sequences in a batch when you need
