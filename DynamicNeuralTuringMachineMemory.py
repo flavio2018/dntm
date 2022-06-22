@@ -2,8 +2,6 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-import logging
-
 
 class DynamicNeuralTuringMachineMemory(nn.Module):
     def __init__(self, n_locations, content_size, address_size, controller_input_size, controller_hidden_state_size):
@@ -63,30 +61,13 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
         self.memory_contents[:-1, :] = (self.memory_contents[:-1, :]
                                         - self.write_weights[:-1, :] @ erase_vector.T
                                         + self.write_weights[:-1, :] @ candidate_content_vector.T)
-        logging.debug(f"{erase_vector.isnan().any()=}")
-        logging.debug(f"{alpha.isnan().any()=}")
-        logging.debug(f"{candidate_content_vector.isnan().any()=}")
-        logging.debug(f"{self.memory_contents.element_size() * self.memory_contents.nelement()=}")
 
     def _address_memory(self, controller_hidden_state):
         projected_hidden_state = self.W_hat_hidden @ controller_hidden_state
         query = self.W_query.T @ projected_hidden_state + self.b_query
-
         sharpening_beta = F.softplus(self.u_sharpen.T @ controller_hidden_state + self.b_sharpen) + 1
-
         similarity_vector = self._compute_similarity(query, sharpening_beta)
-        # similarity_vector = torch.nn.Parameter(similarity_vector)
         address_vector = self._apply_lru_addressing(similarity_vector, controller_hidden_state)
-
-        with torch.no_grad():
-            logging.debug(f"{query.isnan().any()=}")
-            logging.debug(f"{query.mean()=}")
-            logging.debug(f"{query.max()=}")
-            logging.debug(f"{query.min()=}")
-            logging.debug(f"{sharpening_beta.isnan().any()=}")
-            logging.debug(f"{similarity_vector.isnan().any()=}")
-            # logging.debug(f"{address_vector.isnan().any()=}")
-
         return address_vector
 
     def _full_memory_view(self):
@@ -95,11 +76,6 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
     def _compute_similarity(self, query, sharpening_beta):
         """Compute the sharpened cosine similarity vector between the query and the memory locations."""
         full_memory_view = self._full_memory_view()
-        with torch.no_grad():
-            logging.debug(f"{full_memory_view.isnan().any()=}")
-            logging.debug(f"{full_memory_view.mean()=}")
-            logging.debug(f"{full_memory_view.min()=}")
-            logging.debug(f"{full_memory_view.max()=}")
         return sharpening_beta * F.cosine_similarity(full_memory_view[:, None, :], query.T[None, :, :],
                                                      eps=1e-7, dim=-1)
 
