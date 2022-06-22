@@ -2,6 +2,8 @@ import torch
 from src.models.DynamicNeuralTuringMachine import DynamicNeuralTuringMachine
 from src.models.DynamicNeuralTuringMachineMemory import DynamicNeuralTuringMachineMemory
 import logging
+import matplotlib.pyplot as plt
+import wandb
 
 
 def read_write_consistency_regularizer(sequence_read_weights, sequence_write_weights, lambda_):
@@ -30,3 +32,18 @@ def get_digit_string_repr(digit):
             repr += ' ' + ' ' if str_item == 0 else '0'
         repr += '\n'
     return repr
+
+
+def save_address_sequence_heatmap(weights_full, read: bool, labels):
+    read_or_write = 'read' if read else 'write'
+    
+    print(f"Saving {read_or_write} heatmap")
+    labels = labels.replace('<pad>', ' ')
+    fig = plt.figure(figsize=(9, 3))
+    sns.heatmap(weights_full, vmin=weights_full.min(), vmax=weights_full.max(),
+                cbar=True, xticklabels=labels, yticklabels=False).set_title(read_or_write)
+    plt.xticks(rotation=0)
+    plt.show()
+    path = os.path.join(os.getcwd(), f"memory_access_{read_or_write}_full.png")
+    plt.savefig(path)
+    wandb.log({f"memory_access_{read_or_write}_full": wandb.Image(path)})
