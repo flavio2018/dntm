@@ -3,6 +3,7 @@ from .DynamicNeuralTuringMachine import DynamicNeuralTuringMachine
 from .DynamicNeuralTuringMachineMemory import DynamicNeuralTuringMachineMemory
 import logging
 import matplotlib.pyplot as plt
+import seaborn as sns
 import wandb
 
 
