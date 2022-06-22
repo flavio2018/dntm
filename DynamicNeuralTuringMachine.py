@@ -45,23 +45,13 @@ class DynamicNeuralTuringMachine(nn.Module):
         outputs = []
         
         for i_seq in range(seq_len):
-            logging.debug(f"Seq. el. {i_seq}")
-            logging.debug(f"{batch[:, i_seq, :]=}")
-            logging.debug(f"{batch[:, i_seq, :].T=}")
             batch_element = batch[:, i_seq, :].reshape(feature_size, batch_size)
-            logging.debug(f"{batch_element=}")
             controller_hidden_state, output = self.step_on_batch_element(batch_element)
             hidden_states.append(controller_hidden_state)
             outputs.append(output)
         return torch.stack(hidden_states), torch.stack(outputs)
 
     def step_on_batch_element(self, x):
-        with torch.no_grad():
-            logging.debug(f"{self.controller_hidden_state.isnan().any()=}")
-            logging.debug(f"{self.controller_hidden_state.mean()=}")
-            logging.debug(f"{self.controller_hidden_state.max()=}")
-            logging.debug(f"{self.controller_hidden_state.min()=}")
-
         memory_reading = self.memory.read(self.controller_hidden_state)
         self.memory.update(self.controller_hidden_state, x)
         self.controller_hidden_state = self.controller(x, self.controller_hidden_state, memory_reading)
