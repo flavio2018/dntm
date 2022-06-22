@@ -49,7 +49,6 @@ class DynamicNeuralTuringMachine(nn.Module):
             controller_hidden_state, output = self.step_on_batch_element(batch_element)
             hidden_states.append(controller_hidden_state)
             outputs.append(output)
-            self._register_addresses(i_seq)
         return torch.stack(hidden_states), torch.stack(outputs)
 
     def step_on_batch_element(self, x):
@@ -57,6 +56,7 @@ class DynamicNeuralTuringMachine(nn.Module):
         self.memory.update(self.controller_hidden_state, x)
         self.controller_hidden_state = self.controller(x, self.controller_hidden_state, memory_reading)
         output = F.log_softmax(self.W_output @ self.controller_hidden_state + self.b_output, dim=0)
+        self._register_addresses()
         return self.controller_hidden_state, output
 
     def _init_parameters(self, init_function):
@@ -92,16 +92,17 @@ class DynamicNeuralTuringMachine(nn.Module):
         self.register_buffer("controller_hidden_state", torch.zeros(size=(controller_hidden_state_size, batch_size)))
         self.controller_hidden_state = self.controller_hidden_state.to(device)
 
-    def _reshape_and_reset_addresses_sequences(self, max_sequence_length_in_batch):
-        self.register_buffer("read_weights_sequence",
-                              torch.zeros((self.memory.memory_contents.shape[0], max_sequence_length_in_batch)))
-        self.register_buffer("write_weights_sequence",
-                              torch.zeros((self.memory.memory_contents.shape[0], max_sequence_length_in_batch)))
+    def _reshape_and_reset_addresses_sequences(self):
+        self._read_weights_sequence = []
+        self._write_weights_sequence = []
 
-    def _register_addresses(self, i_seq):
+    def _register_addresses(self):
         """Register the reading adn writing addresses corresponding to the first element in the batch."""
-        self.read_weights_sequence[:, i_seq] = self.memory.read_weights[:, 0].squeeze().detach().cpu()
-        self.write_weights_sequence[:, i_seq] = self.memory.write_weights[:, 0].squeeze().detach().cpu()
+        self._read_weights_sequence.append(self.memory.read_weights[:, 0].squeeze().detach().cpu())
+        self._write_weights_sequence.append(self.memory.write_weights[:, 0].squeeze().detach().cpu())
+
+    def get_addresses_sequences(self):
+        return torch.cat(self._read_weights_sequence, dim=1), torch.cat(self._write_weights_sequence, dim=1)
 
     def set_hidden_state(self, hidden_states, input_sequences_lengths, batch_size):
         """Use this to handle the case of diffenent-lengths sequences in a batch when you need
