@@ -28,6 +28,7 @@ class DynamicNeuralTuringMachine(nn.Module):
         self.W_output = nn.Parameter(torch.zeros(controller_output_size, controller_hidden_state_size))
         self.b_output = nn.Parameter(torch.zeros(controller_output_size, 1))
 
+        self._reshape_and_reset_addresses_sequences((32, 1))
         self._init_parameters(init_function=nn.init.xavier_uniform_)
 
     def forward(self, input):
@@ -49,6 +50,8 @@ class DynamicNeuralTuringMachine(nn.Module):
             controller_hidden_state, output = self.step_on_batch_element(batch_element)
             hidden_states.append(controller_hidden_state)
             outputs.append(output)
+            self.read_weights_sequence[:, i_seq] = self.memory.read_weights[:, 0].squeeze().detach().cpu().numpy()
+            self.write_weights_sequence[:, i_seq] = self.memory.write_weights[:, 0].squeeze().detach().cpu().numpy()
         return torch.stack(hidden_states), torch.stack(outputs)
 
     def step_on_batch_element(self, x):
@@ -82,6 +85,7 @@ class DynamicNeuralTuringMachine(nn.Module):
         self.memory._reset_memory_content()
         self._reshape_and_reset_hidden_states(batch_size=batch.shape[0], device=device)
         self.memory._reshape_and_reset_exp_mov_avg_sim(batch_size=batch.shape[0], device=device)
+        self._reshape_and_reset_addresses_sequences(max_sequence_length_in_batch=batch.shape[1])
         self.controller_hidden_state = self.controller_hidden_state.detach()
 
     def _reshape_and_reset_hidden_states(self, batch_size, device):
@@ -89,6 +93,12 @@ class DynamicNeuralTuringMachine(nn.Module):
             controller_hidden_state_size = self.W_output.shape[1]
         self.register_buffer("controller_hidden_state", torch.zeros(size=(controller_hidden_state_size, batch_size)))
         self.controller_hidden_state = self.controller_hidden_state.to(device)
+
+    def _reshape_and_reset_addresses_sequences(self, max_sequence_length_in_batch):
+        torch.register_buffer("read_weights_sequence",
+                              torch.zeros((self.memory.memory_contents.shape[0], max_sequence_length_in_batch)))
+        torch.register_buffer("write_weights_sequence",
+                              torch.zeros((self.memory.memory_contents.shape[0], max_sequence_length_in_batch)))
 
     def set_hidden_state(self, hidden_states, input_sequences_lengths, batch_size):
         """Use this to handle the case of diffenent-lengths sequences in a batch when you need
