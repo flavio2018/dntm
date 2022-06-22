@@ -4,6 +4,7 @@ from .DynamicNeuralTuringMachineMemory import DynamicNeuralTuringMachineMemory
 import logging
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
 import wandb
 
 
