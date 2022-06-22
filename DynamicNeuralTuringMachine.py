@@ -83,7 +83,7 @@ class DynamicNeuralTuringMachine(nn.Module):
         self.memory._reset_memory_content()
         self._reshape_and_reset_hidden_states(batch_size=batch.shape[0], device=device)
         self.memory._reshape_and_reset_exp_mov_avg_sim(batch_size=batch.shape[0], device=device)
-        self._reshape_and_reset_addresses_sequences(max_sequence_length_in_batch=batch.shape[1])
+        self._reshape_and_reset_addresses_sequences()
         self.controller_hidden_state = self.controller_hidden_state.detach()
 
     def _reshape_and_reset_hidden_states(self, batch_size, device):
