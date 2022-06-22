@@ -1,7 +1,7 @@
 import torch
 
-from src.models.DynamicNeuralTuringMachine import DynamicNeuralTuringMachine
-from src.models.DynamicNeuralTuringMachineMemory import DynamicNeuralTuringMachineMemory
+from .DynamicNeuralTuringMachine import DynamicNeuralTuringMachine
+from .DynamicNeuralTuringMachineMemory import DynamicNeuralTuringMachineMemory
 
 
 CONTROLLER_INPUT_SIZE = 1
