@@ -49,8 +49,7 @@ class DynamicNeuralTuringMachine(nn.Module):
             controller_hidden_state, output = self.step_on_batch_element(batch_element)
             hidden_states.append(controller_hidden_state)
             outputs.append(output)
-            self.read_weights_sequence[:, i_seq] = self.memory.read_weights[:, 0].squeeze().detach().cpu()
-            self.write_weights_sequence[:, i_seq] = self.memory.write_weights[:, 0].squeeze().detach().cpu()
+            self._register_addresses(i_seq)
         return torch.stack(hidden_states), torch.stack(outputs)
 
     def step_on_batch_element(self, x):
@@ -98,6 +97,11 @@ class DynamicNeuralTuringMachine(nn.Module):
                               torch.zeros((self.memory.memory_contents.shape[0], max_sequence_length_in_batch)))
         self.register_buffer("write_weights_sequence",
                               torch.zeros((self.memory.memory_contents.shape[0], max_sequence_length_in_batch)))
+
+    def _register_addresses(self, i_seq):
+        """Register the reading adn writing addresses corresponding to the first element in the batch."""
+        self.read_weights_sequence[:, i_seq] = self.memory.read_weights[:, 0].squeeze().detach().cpu()
+        self.write_weights_sequence[:, i_seq] = self.memory.write_weights[:, 0].squeeze().detach().cpu()
 
     def set_hidden_state(self, hidden_states, input_sequences_lengths, batch_size):
         """Use this to handle the case of diffenent-lengths sequences in a batch when you need
