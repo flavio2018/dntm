@@ -96,10 +96,15 @@ class DynamicNeuralTuringMachine(nn.Module):
         self._read_weights_sequence = []
         self._write_weights_sequence = []
 
-    def _register_addresses(self):
-        """Register the reading adn writing addresses corresponding to the first element in the batch."""
-        self._read_weights_sequence.append(self.memory.read_weights[:, 0].squeeze().detach().cpu())
-        self._write_weights_sequence.append(self.memory.write_weights[:, 0].squeeze().detach().cpu())
+    def _register_addresses(self, blank=False):
+        """Register the reading and writing addresses corresponding to the first element in the batch.
+        A blank address can be written to separate the addresses of the reading and writing phases."""
+        if blank:
+            self._read_weights_sequence.append(torch.zeros_like(self.memory.read_weights[:, 0]))
+            self._write_weights_sequence.append(torch.zeros_like(self.memory.write_weights[:, 0]))
+        else:
+            self._read_weights_sequence.append(self.memory.read_weights[:, 0].detach().cpu())
+            self._write_weights_sequence.append(self.memory.write_weights[:, 0].detach().cpu())
 
     def get_addresses_sequences(self):
         return torch.cat(self._read_weights_sequence, dim=1), torch.cat(self._write_weights_sequence, dim=1)
