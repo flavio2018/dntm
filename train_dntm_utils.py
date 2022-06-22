@@ -44,7 +44,6 @@ def save_address_sequence_heatmap(weights_full, read: bool, labels):
     sns.heatmap(weights_full, vmin=weights_full.min(), vmax=weights_full.max(),
                 cbar=True, xticklabels=labels, yticklabels=False).set_title(read_or_write)
     plt.xticks(rotation=0)
-    plt.show()
     path = os.path.join(os.getcwd(), f"memory_access_{read_or_write}_full.png")
     plt.savefig(path)
     wandb.log({f"memory_access_{read_or_write}_full": wandb.Image(path)})
