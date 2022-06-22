@@ -28,7 +28,6 @@ class DynamicNeuralTuringMachine(nn.Module):
         self.W_output = nn.Parameter(torch.zeros(controller_output_size, controller_hidden_state_size))
         self.b_output = nn.Parameter(torch.zeros(controller_output_size, 1))
 
-        self._reshape_and_reset_addresses_sequences((32, 1))
         self._init_parameters(init_function=nn.init.xavier_uniform_)
 
     def forward(self, input):
