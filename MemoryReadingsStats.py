@@ -14,7 +14,7 @@ class MemoryReadingsStats:
 		if self.memory_readings is None:
 			self.memory_readings = batch_readings
 		else:
-			self.memory_readings = torch.concat(self.memory_readings, batch_readings)
+			self.memory_readings = torch.concat((self.memory_readings, batch_readings))
 
 
 	def compute_readings_variance(self):
