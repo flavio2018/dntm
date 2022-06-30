@@ -5,7 +5,7 @@ from glob import glob
 
 class MemoryReadingsStats:
 	def __init__(self, path=None):
-		self.path = path
+		self.path = path + '/'
 		self.memory_readings = None  # will have shape (dataset_size, memory_size)
 		self.readings_variance = None
 		self.kl_divergence = None
