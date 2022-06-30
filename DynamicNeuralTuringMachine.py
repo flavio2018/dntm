@@ -52,7 +52,7 @@ class DynamicNeuralTuringMachine(nn.Module):
         return torch.stack(hidden_states), torch.stack(outputs)
 
     def step_on_batch_element(self, x):
-        memory_reading = self.memory.read(self.controller_hidden_state)
+        self.memory_reading = self.memory.read(self.controller_hidden_state)
         self.memory.update(self.controller_hidden_state, x)
         self.controller_hidden_state = self.controller(x, self.controller_hidden_state, memory_reading)
         output = F.log_softmax(self.W_output @ self.controller_hidden_state + self.b_output, dim=0)
