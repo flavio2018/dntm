@@ -22,7 +22,7 @@ class MemoryReadingsStats:
 		return self.readings_variance
 
 
-	def compute_readings_kl_divergence(self,):
+	def compute_readings_kl_divergence(self):
 		kl_div = torch.nn.functional.kl_div
 		sample = torch.rand(self.memory_readings.shape)
 		self.kl_divergence = kl_div(self.memory_readings, sample)
@@ -38,6 +38,12 @@ class MemoryReadingsStats:
 		assert self.random_matrix is not None
 		self.random_projections = self.memory_readings @ self.random_matrix
 		return self.random_projections
+
+
+	def compute_stats(self):
+		self.compute_readings_variance()
+		self.compute_readings_kl_divergence()
+		self.compute_random_projections()
 
 
 	def get_stats(self):
