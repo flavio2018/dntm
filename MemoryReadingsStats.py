@@ -1,6 +1,6 @@
 import torch
 import os
-import glob
+from glob import glob
 
 
 class MemoryReadingsStats:
