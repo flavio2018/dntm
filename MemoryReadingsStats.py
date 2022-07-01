@@ -71,7 +71,7 @@ class MemoryReadingsStats:
 
 
 	def plot_random_projections(self):
-		fig, ax = plt.subplots(1, 1, (8,8))
+		fig, ax = plt.subplots(1, 1, figsize=(8,8))
 		_ = sns.jointplot(x=self.random_projections[:, 0],
                   		  y=self.random_projections[:, 1], ax=ax)
 		num_saved_projection_plots = len(glob(self.path + 'memory_readings_projections_*'))
