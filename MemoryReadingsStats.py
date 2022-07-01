@@ -42,7 +42,7 @@ class MemoryReadingsStats:
 
 	def compute_readings_variance(self):
 		assert self.memory_readings is not None
-		self.readings_variance = torch.var(self.memory_readings, dim=0, unbiased=False)
+		self.readings_variance = torch.var(self.memory_readings, dim=(0, 1), unbiased=False)
 		return self.readings_variance
 
 
