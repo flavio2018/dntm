@@ -27,7 +27,7 @@ class MemoryReadingsStats:
 				self.memory_readings = torch.concat((self.memory_readings, batch_readings.cpu()))
 		else:
 			num_saved_readings = len(os.listdir(self.path))
-			torch.save(batch_readings, "{}memory_readings_{0:3d}.pt".format(self.path, num_saved_readings + 1))
+			torch.save(batch_readings, self.path + "memory_readings_{0:{fill}{align}3}.pt".format(num_saved_readings + 1, fill='0', align='right'))
 
 
 	def compute_readings_variance(self):
