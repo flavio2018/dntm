@@ -85,7 +85,7 @@ class MemoryReadingsStats:
 		_ = sns.jointplot(x=self.random_projections[:, 0],
                   		  y=self.random_projections[:, 1], ax=ax)
 		num_saved_projection_plots = len(glob(self.path + 'memory_readings_projections_*'))
-		plt.savefig(self.path + "memory_readings_projections_epoch{0:03}.png".format(num_saved_projection_plots + 1))
+		plt.savefig(self.path + "memory_readings_projections_epoch{0:03}.png".format(num_saved_projection_plots))
 
 
 	def __repr__(self):
