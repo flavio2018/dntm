@@ -1,6 +1,8 @@
 import torch
 import os
 from glob import glob
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 class MemoryReadingsStats:
@@ -26,7 +28,7 @@ class MemoryReadingsStats:
 			else:
 				self.memory_readings = torch.concat((self.memory_readings, batch_readings.cpu()))
 		else:
-			num_saved_readings = len(os.listdir(self.path))
+			num_saved_readings = len(glob(self.path + 'memory_readings' + '*.pt'))
 			torch.save(batch_readings, self.path + "memory_readings_{0:03}.pt".format(num_saved_readings + 1))
 
 
@@ -66,6 +68,14 @@ class MemoryReadingsStats:
 		var = f"Readings variance: {self.readings_variance}\n"
 		kl = f"Readings KL divergence from uniform distribution: {self.kl_divergence}\n"
 		return var + kl
+
+
+	def plot_random_projections(self):
+		fig, ax = plt.subplots(1, 1, (8,8))
+		_ = sns.jointplot(x=self.random_projections[:, 0],
+                  		  y=self.random_projections[:, 1], ax=ax)
+		num_saved_projection_plots = len(glob(self.path + 'memory_readings_projections_*'))
+		plt.savefig(self.path + "memory_readings_projections_{0:03}.png".format(num_saved_projection_plots + 1))
 
 
 	def __repr__(self):
