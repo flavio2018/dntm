@@ -21,15 +21,23 @@ class MemoryReadingsStats:
 			self.memory_readings = self.memory_readings.cpu()
 
 
-	def update_memory_readings(self, batch_readings):
+	def update_memory_readings(self, batch_readings, epoch=0):
 		if self.path is None:
 			if self.memory_readings is None:
 				self.memory_readings = batch_readings.cpu()
 			else:
 				self.memory_readings = torch.concat((self.memory_readings, batch_readings.cpu()))
 		else:
-			num_saved_readings = len(glob(self.path + 'memory_readings' + '*.pt'))
-			torch.save(batch_readings, self.path + "memory_readings_{0:03}.pt".format(num_saved_readings + 1))
+			num_saved_readings = len(glob(self.path + 'memory_readings' + f"*_epoch{epoch}.pt"))
+			torch.save(batch_readings, self.path + "memory_readings_{0:03}".format(num_saved_readings + 1) + "_epoch{epoch}.pt")
+
+
+	def reset(self):
+		self.memory_readings = None
+		self.readings_variance = None
+		self.kl_divergence = None
+		self.random_projections = None
+		self.random_matrix = None
 
 
 	def compute_readings_variance(self):
@@ -75,7 +83,7 @@ class MemoryReadingsStats:
 		_ = sns.jointplot(x=self.random_projections[:, 0],
                   		  y=self.random_projections[:, 1], ax=ax)
 		num_saved_projection_plots = len(glob(self.path + 'memory_readings_projections_*'))
-		plt.savefig(self.path + "memory_readings_projections_{0:03}.png".format(num_saved_projection_plots + 1))
+		plt.savefig(self.path + "memory_readings_projections_epoch{0:03}.png".format(num_saved_projection_plots + 1))
 
 
 	def __repr__(self):
