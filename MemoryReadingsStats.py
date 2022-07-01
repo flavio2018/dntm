@@ -18,15 +18,16 @@ class MemoryReadingsStats:
 	def load_memory_readings(self, epoch):
 		if (self.path is not None) and (self.memory_readings is None):
 			self.memory_readings = torch.concat([torch.load(path) for path in glob(self.path + 'memory_readings' + f"*_epoch{epoch}.pt")])
-			self.memory_readings = self.memory_readings.cpu()
+			self.memory_readings = self.memory_readings.detach().cpu()
 
 
 	def update_memory_readings(self, batch_readings, epoch=0):
+		batch_readings = batch_readings.detach().cpu()
 		if self.path is None:
 			if self.memory_readings is None:
-				self.memory_readings = batch_readings.cpu()
+				self.memory_readings = batch_readings
 			else:
-				self.memory_readings = torch.concat((self.memory_readings, batch_readings.cpu()))
+				self.memory_readings = torch.concat((self.memory_readings, batch_readings))
 		else:
 			num_saved_readings = len(glob(self.path + 'memory_readings' + f"*_epoch{epoch}.pt"))
 			torch.save(batch_readings, self.path + "memory_readings_{0:03}".format(num_saved_readings + 1) + f"_epoch{epoch}.pt")
