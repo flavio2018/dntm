@@ -63,7 +63,7 @@ class MemoryReadingsStats:
 	def compute_random_projections(self):
 		assert self.random_matrix is not None
 		assert self.memory_readings is not None
-		self.random_projections = self.memory_readings @ self.random_matrix
+		self.random_projections = self.memory_readings.T @ self.random_matrix
 		return self.random_projections
 
 
