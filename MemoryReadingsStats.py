@@ -29,7 +29,7 @@ class MemoryReadingsStats:
 				self.memory_readings = torch.concat((self.memory_readings, batch_readings.cpu()))
 		else:
 			num_saved_readings = len(glob(self.path + 'memory_readings' + f"*_epoch{epoch}.pt"))
-			torch.save(batch_readings, self.path + "memory_readings_{0:03}".format(num_saved_readings + 1) + "_epoch{epoch}.pt")
+			torch.save(batch_readings, self.path + "memory_readings_{0:03}".format(num_saved_readings + 1) + f"_epoch{epoch}.pt")
 
 
 	def reset(self):
