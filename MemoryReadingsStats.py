@@ -15,7 +15,7 @@ class MemoryReadingsStats:
 		self.random_matrix = None
 
 
-	def _load_memory_readings(self, epoch):
+	def load_memory_readings(self, epoch):
 		if (self.path is not None) and (self.memory_readings is None):
 			self.memory_readings = torch.concat([torch.load(path) for path in glob(self.path + 'memory_readings' + f"*_epoch{epoch}.pt")])
 			self.memory_readings = self.memory_readings.cpu()
@@ -41,13 +41,13 @@ class MemoryReadingsStats:
 
 
 	def compute_readings_variance(self):
-		self._load_memory_readings()
+		assert self.memory_readings is not None
 		self.readings_variance = torch.var(self.memory_readings, dim=0, unbiased=False)
 		return self.readings_variance
 
 
 	def compute_readings_kl_divergence(self):
-		self._load_memory_readings()
+		assert self.memory_readings is not None
 		kl_div = torch.nn.functional.kl_div
 		sample = torch.rand(self.memory_readings.shape)
 		self.kl_divergence = kl_div(self.memory_readings, sample)
@@ -61,12 +61,13 @@ class MemoryReadingsStats:
 
 	def compute_random_projections(self):
 		assert self.random_matrix is not None
-		self._load_memory_readings()
+		assert self.memory_readings is not None
 		self.random_projections = self.memory_readings @ self.random_matrix
 		return self.random_projections
 
 
 	def compute_stats(self):
+		assert self.memory_readings is not None
 		self.compute_readings_variance()
 		self.compute_readings_kl_divergence()
 		self.compute_random_projections()
@@ -79,6 +80,7 @@ class MemoryReadingsStats:
 
 
 	def plot_random_projections(self):
+		assert self.random_projections is not None
 		fig, ax = plt.subplots(1, 1, figsize=(8,8))
 		_ = sns.jointplot(x=self.random_projections[:, 0],
                   		  y=self.random_projections[:, 1], ax=ax)
