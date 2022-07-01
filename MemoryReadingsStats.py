@@ -38,7 +38,6 @@ class MemoryReadingsStats:
 		self.readings_variance = None
 		self.kl_divergence = None
 		self.random_projections = None
-		self.random_matrix = None
 
 
 	def compute_readings_variance(self):
