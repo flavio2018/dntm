@@ -17,7 +17,7 @@ class MemoryReadingsStats:
 
 	def load_memory_readings(self, epoch):
 		if (self.path is not None) and (self.memory_readings is None):
-			self.memory_readings = torch.concat([torch.load(path) for path in glob(self.path + 'memory_readings' + f"*_epoch{epoch}.pt")])
+			self.memory_readings = torch.concat([torch.load(path) for path in glob(self.path + 'memory_readings' + f"*_epoch{epoch}.pt")], dim=1)
 			self.memory_readings = self.memory_readings.detach().cpu()
 
 
