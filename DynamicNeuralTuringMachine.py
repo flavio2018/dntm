@@ -118,25 +118,25 @@ class DynamicNeuralTuringMachine(nn.Module):
         return hidden_state
 
 
-def build_dntm(model_conf, device):
+def build_dntm(cfg, device):
     dntm_memory = DynamicNeuralTuringMachineMemory(
-        n_locations=model_conf.n_locations,
-        content_size=model_conf.content_size,
-        address_size=model_conf.address_size,
-        controller_input_size=model_conf.controller_input_size,
-        controller_hidden_state_size=model_conf.controller_hidden_state_size
+        n_locations=cfg.model.n_locations,
+        content_size=cfg.model.content_size,
+        address_size=cfg.model.address_size,
+        controller_input_size=cfg.model.controller_input_size,
+        controller_hidden_state_size=cfg.model.controller_hidden_state_size
     )
 
     dntm = DynamicNeuralTuringMachine(
         memory=dntm_memory,
-        controller_hidden_state_size=model_conf.controller_hidden_state_size,
-        controller_input_size=model_conf.controller_input_size,
-        controller_output_size=model_conf.controller_output_size
+        controller_hidden_state_size=cfg.model.controller_hidden_state_size,
+        controller_input_size=cfg.model.controller_input_size,
+        controller_output_size=cfg.model.controller_output_size
     ).to(device)
 
-    if model_conf.ckpt is not None:
-        logging.info(f"Reloading from checkpoint: {model_conf.ckpt}")
-        state_dict = torch.load(model_conf.ckpt)
+    if cfg.model.ckpt is not None:
+        logging.info(f"Reloading from checkpoint: {cfg.model.ckpt}")
+        state_dict = torch.load(cfg.model.ckpt, map_location=torch.device(cfg.run.device))
         batch_size_ckpt = state_dict['controller_hidden_state'].shape[1]
         dntm.memory._reset_memory_content()
         dntm._reshape_and_reset_hidden_states(batch_size=batch_size_ckpt, device=device)
