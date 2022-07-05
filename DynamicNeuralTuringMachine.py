@@ -41,22 +41,17 @@ class DynamicNeuralTuringMachine(nn.Module):
         is the batch size, the second one is the sequence length and the third one is the feature size."""
         logging.debug(f"Looping through image pixels")
         batch_size, seq_len, feature_size = batch.shape
-        hidden_states = []
-        outputs = []
         
         for i_seq in range(seq_len):
             batch_element = batch[:, i_seq, :].reshape(feature_size, batch_size)
             controller_hidden_state, output = self.step_on_batch_element(batch_element)
-            hidden_states.append(controller_hidden_state)
-            outputs.append(output)
-        return torch.stack(hidden_states), torch.stack(outputs)
+        return controller_hidden_state, output
 
     def step_on_batch_element(self, x):
         self.memory_reading = self.memory.read(self.controller_hidden_state)
         self.memory.update(self.controller_hidden_state, x)
         self.controller_hidden_state = self.controller(x, self.controller_hidden_state, self.memory_reading)
         output = F.log_softmax(self.W_output @ self.controller_hidden_state + self.b_output, dim=0)
-        # self._register_addresses()
         return self.controller_hidden_state, output
 
     def _init_parameters(self, init_function):
@@ -83,7 +78,6 @@ class DynamicNeuralTuringMachine(nn.Module):
         self.memory._reset_memory_content()
         self._reshape_and_reset_hidden_states(batch_size=batch.shape[0], device=device)
         self.memory._reshape_and_reset_exp_mov_avg_sim(batch_size=batch.shape[0], device=device)
-        self._reshape_and_reset_addresses_sequences()
         self.controller_hidden_state = self.controller_hidden_state.detach()
 
     def _reshape_and_reset_hidden_states(self, batch_size, device):
@@ -92,32 +86,7 @@ class DynamicNeuralTuringMachine(nn.Module):
         self.register_buffer("controller_hidden_state", torch.zeros(size=(controller_hidden_state_size, batch_size)))
         self.controller_hidden_state = self.controller_hidden_state.to(device)
 
-    def _reshape_and_reset_addresses_sequences(self):
-        self._read_weights_sequence = []
-        self._write_weights_sequence = []
-
-    def _register_addresses(self, blank=False):
-        """Register the reading and writing addresses corresponding to the first element in the batch.
-        A blank address can be written to separate the addresses of the reading and writing phases."""
-        if blank:
-            self._read_weights_sequence.append(torch.zeros_like(self.memory.read_weights[:, 0]))
-            self._write_weights_sequence.append(torch.zeros_like(self.memory.write_weights[:, 0]))
-        else:
-            self._read_weights_sequence.append(self.memory.read_weights[:, 0].detach().cpu())
-            self._write_weights_sequence.append(self.memory.write_weights[:, 0].detach().cpu())
-
-    def get_addresses_sequences(self):
-        return torch.stack(self._read_weights_sequence, dim=1), torch.stack(self._write_weights_sequence, dim=1)
-
-    def set_hidden_state(self, hidden_states, input_sequences_lengths, batch_size):
-        """Use this to handle the case of diffenent-lengths sequences in a batch when you need
-        to re-initialize the hidden state to the value it had at the end of the processing of the
-        true sequence, excluding padding."""
-        hidden_state = torch.stack([hidden_states[l-1,:,b] for l, b in zip(input_sequences_lengths, range(batch_size))])
-        self.controller_hidden_state = hidden_state.T.detach()
-        return hidden_state
-
-
+    
 def build_dntm(cfg, device):
     dntm_memory = DynamicNeuralTuringMachineMemory(
         n_locations=cfg.model.n_locations,
@@ -141,6 +110,5 @@ def build_dntm(cfg, device):
         dntm.memory._reset_memory_content()
         dntm._reshape_and_reset_hidden_states(batch_size=batch_size_ckpt, device=device)
         dntm.memory._reshape_and_reset_exp_mov_avg_sim(batch_size=batch_size_ckpt, device=device)
-        # dntm.memory.reshape_and_reset_read_write_weights(shape=state_dict['memory.read_weights'].shape)
         dntm.load_state_dict(state_dict)
     return dntm
