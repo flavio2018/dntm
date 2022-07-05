@@ -44,7 +44,7 @@ class DynamicNeuralTuringMachine(nn.Module):
         
         for i_seq in range(seq_len):
             batch_element = batch[:, i_seq, :].reshape(feature_size, batch_size)
-             = self.step_on_batch_element(batch_element)
+            controller_hidden_state, output = self.step_on_batch_element(batch_element)
         return controller_hidden_state, output
 
     def step_on_batch_element(self, x):
