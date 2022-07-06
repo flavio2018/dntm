@@ -87,7 +87,6 @@ class DynamicNeuralTuringMachine(nn.Module):
         self.controller_hidden_state = self.controller_hidden_state.to(device)
 
 
-
 def build_dntm(cfg, device):
     dntm_memory = DynamicNeuralTuringMachineMemory(
         n_locations=cfg.model.n_locations,
