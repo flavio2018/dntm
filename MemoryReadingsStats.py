@@ -24,14 +24,15 @@ class MemoryReadingsStats:
 
 	def update_memory_readings(self, batch_readings, epoch=0):
 		logging.info(f"Updating memory readings")
+		batch_readings = batch_readings.detach().cpu()
 		if self.path is None:
 			if self.memory_readings is None:
-				self.memory_readings = batch_readings.detach().cpu()
+				self.memory_readings = batch_readings
 			else:
-				self.memory_readings = torch.concat((self.memory_readings, batch_readings.detach().cpu()))
+				self.memory_readings = torch.concat((self.memory_readings, batch_readings))
 		else:
 			num_saved_readings = len(glob(self.path + 'memory_readings' + f"*_epoch{epoch}.pt"))
-			torch.save(batch_readings.detach().cpu(), self.path + "memory_readings_{0:03}".format(num_saved_readings + 1) + f"_epoch{epoch}.pt")
+			torch.save(batch_readings, self.path + "memory_readings_{0:03}".format(num_saved_readings + 1) + f"_epoch{epoch}.pt")
 
 
 	def reset(self):
