@@ -13,6 +13,7 @@ class MemoryReadingsStats:
 		self.kl_divergence = None
 		self.random_projections = None
 		self.random_matrix = None
+		logging.info(f"Init memory readings stats with path {self.path}")
 
 
 	def load_memory_readings(self, epoch):
@@ -22,6 +23,7 @@ class MemoryReadingsStats:
 
 
 	def update_memory_readings(self, batch_readings, epoch=0):
+		logging.info(f"Updating memory readings")
 		if self.path is None:
 			if self.memory_readings is None:
 				self.memory_readings = batch_readings.detach().cpu()
