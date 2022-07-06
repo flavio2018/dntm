@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
+import logging
 
 
 class DynamicNeuralTuringMachineMemory(nn.Module):
@@ -42,12 +43,14 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
         self.b_content_alpha = nn.Parameter(torch.zeros(1))
 
     def read(self, controller_hidden_state):
+        logging.debug("Reading memory")
         self.read_weights = self._address_memory(controller_hidden_state)
         # this implements the memory NO-OP at reading phase
         return self._full_memory_view()[:-1, :].T @ self.read_weights[:-1, :]
         # TODO add in tests NO-OP
 
     def update(self, controller_hidden_state, controller_input):
+        logging.debug("Updating memory")
         self.write_weights = self._address_memory(controller_hidden_state)
         erase_vector = self.W_erase @ controller_hidden_state + self.b_erase  # TODO MLP
 
@@ -63,6 +66,9 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
                                         + self.write_weights[:-1, :] @ candidate_content_vector.T)
 
     def _address_memory(self, controller_hidden_state):
+        logging.debug("Addressing memory")
+        logging.debug(torch.cuda.memory_allocated(device))
+        logging.debug(torch.cuda.memory_reserved(device))
         projected_hidden_state = self.W_hat_hidden @ controller_hidden_state
         query = self.W_query.T @ projected_hidden_state + self.b_query
         sharpening_beta = F.softplus(self.u_sharpen.T @ controller_hidden_state + self.b_sharpen) + 1
