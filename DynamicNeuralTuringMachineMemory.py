@@ -67,8 +67,8 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
 
     def _address_memory(self, controller_hidden_state):
         logging.debug("Addressing memory")
-        logging.debug("Memory allocated: ", torch.cuda.memory_allocated(controller_hidden_state.device), "B")
-        logging.debug("Memory reserved: ", torch.cuda.memory_reserved(controller_hidden_state.device), "B")
+        logging.debug(f"Memory allocated: {str(torch.cuda.memory_allocated(controller_hidden_state.device))} B")
+        logging.debug(f"Memory reserved: {str(torch.cuda.memory_reserved(controller_hidden_state.device))} B")
         projected_hidden_state = self.W_hat_hidden @ controller_hidden_state
         query = self.W_query.T @ projected_hidden_state + self.b_query
         sharpening_beta = F.softplus(self.u_sharpen.T @ controller_hidden_state + self.b_sharpen) + 1
