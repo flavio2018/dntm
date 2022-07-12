@@ -45,7 +45,7 @@ class MemoryReadingsStats:
 
 	def compute_readings_variance(self):
 		assert self.memory_readings is not None
-		self.readings_variance = torch.var(self.memory_readings, dim=(0, 1), unbiased=False)
+		self.readings_variance = torch.var(self.memory_readings, dim=(1), unbiased=False)
 		return self.readings_variance
 
 
@@ -53,13 +53,18 @@ class MemoryReadingsStats:
 		assert self.memory_readings is not None
 		kl_div = torch.nn.functional.kl_div
 		sample = torch.rand(self.memory_readings.shape)
-		self.kl_divergence = kl_div(self.memory_readings, sample)
+		min_memory_readings = self.memory_readings.min()
+		max_memory_readings = self.memory_readings.max()
+		memory_readings_support_size = abs(max_memory_readings - min_memory_readings)
+		sample = (sample * max_memory_readings) + min_memory_readings
+		self.kl_divergence = kl_div(self.memory_readings, sample, reduction='none')
 		return self.kl_divergence
 
 
 	def init_random_matrix(self, memory_size):
 		if self.random_matrix is None:
 			self.random_matrix = torch.rand((memory_size, 2))
+			self.random_matrix = (self.random_matrix.T / torch.linalg.norm(self.random_matrix, dim=1)).T
 
 
 	def compute_random_projections(self):
