@@ -62,7 +62,7 @@ class MemoryReadingsStats:
 		min_memory_readings = self.memory_readings.min()
 		max_memory_readings = self.memory_readings.max()
 		memory_readings_support_size = abs(max_memory_readings - min_memory_readings)
-		sample = (sample * max_memory_readings) + min_memory_readings
+		sample = (sample * memory_readings_support_size) + min_memory_readings
 		self.kl_divergence = kl_div(self.memory_readings, sample, reduction='none')
 		return self.kl_divergence
 
