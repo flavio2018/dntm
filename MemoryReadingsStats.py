@@ -43,6 +43,12 @@ class MemoryReadingsStats:
 		self.random_projections = None
 
 
+	def compute_readings_mean(self):
+		assert self.memory_readings is not None
+		self.readings_mean = torch.mean(self.memory_readings, dim=(1))
+		return self.readings_mean
+
+
 	def compute_readings_variance(self):
 		assert self.memory_readings is not None
 		self.readings_variance = torch.var(self.memory_readings, dim=(1), unbiased=False)
