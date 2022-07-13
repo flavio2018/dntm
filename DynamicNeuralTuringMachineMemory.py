@@ -103,8 +103,7 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
     def _reshape_and_reset_exp_mov_avg_sim(self, batch_size, device):
         with torch.no_grad():
             n_locations = self.memory_addresses.shape[0]
-        self.register_buffer("exp_mov_avg_similarity", torch.zeros(size=(n_locations, batch_size)))
-        self.exp_mov_avg_similarity = self.exp_mov_avg_similarity.to(device)
+        self.register_buffer("exp_mov_avg_similarity", torch.zeros(size=(n_locations, batch_size), device=device))
 
     # def reshape_and_reset_read_write_weights(self, shape):
     #     self.read_weights = nn.Parameter(torch.zeros(size=shape))
