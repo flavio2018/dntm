@@ -67,9 +67,11 @@ class MemoryReadingsStats:
 		return self.kl_divergence
 
 
-	def init_random_matrix(self, memory_size):
+	def init_random_matrix(self, memory_size, gaussian=False):
 		if self.random_matrix is None:
 			self.random_matrix = torch.rand((memory_size, 2))
+			if gaussian:
+				self.random_matrix = torch.randn((memory_size, 2))
 			self.random_matrix = (self.random_matrix.T / torch.linalg.norm(self.random_matrix, dim=1)).T
 
 
