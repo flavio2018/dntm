@@ -49,11 +49,12 @@ class DynamicNeuralTuringMachine(nn.Module):
 
     def step_on_batch_element(self, x):
         self.memory_reading = self.memory.read(self.controller_hidden_state)
+        self.memory_reading.register_hook(print)
         self.memory.update(self.controller_hidden_state, x)
         self.controller_hidden_state = self.controller(x, self.controller_hidden_state, self.memory_reading)
         address_size = self.memory.memory_addresses.shape[1] 
-        self.memory_reading = self.memory_reading[address_size:, :]
-        output = F.log_softmax(self.W_output @ self.memory_reading + self.b_output, dim=0)
+        self.content_memory_reading = self.memory_reading[address_size:, :]
+        output = F.log_softmax(self.W_output @ self.content_memory_reading + self.b_output, dim=0)
         return self.controller_hidden_state, output
 
     def _init_parameters(self, init_function):
