@@ -13,8 +13,8 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
         super(DynamicNeuralTuringMachineMemory, self).__init__()
 
         self.register_buffer("memory_contents", torch.zeros(size=(n_locations, content_size)))
-        # self.memory_contents = nn.Parameter(torch.zeros(size=(n_locations, content_size)), requires_grad=False)
-        self.memory_addresses = nn.Parameter(torch.zeros(size=(n_locations, address_size)), requires_grad=True)
+        self.register_buffer("memory_addresses", torch.zeros(size=(n_locations, address_size)))
+        self._init_memory_addresses()
         self.overall_memory_size = content_size + address_size
 
         self.W_hat_hidden = nn.Parameter(torch.zeros(size=(n_locations, controller_hidden_state_size)))
@@ -116,6 +116,12 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
     # def reshape_and_reset_read_write_weights(self, shape):
     #     self.read_weights = nn.Parameter(torch.zeros(size=shape))
     #     self.write_weights = nn.Parameter(torch.zeros(size=shape))
+
+    def _init_memory_addresses(self):
+        a, b = -1, 1  # for a sphere of unit radius centered in 0
+        n_locations, address_size = self.memory_addresses.shape
+        random_points_in_interval = torch.rand((n_locations, address_size)) * (b - a) + a
+        self.memory_addresses = random_points_in_interval / torch.linalg.norm(random_points_in_interval, dim=-1).view(-1, 1)  # project on a sphere
 
     def forward(self, x):
         raise RuntimeError("It makes no sense to call the memory module on its own. "
