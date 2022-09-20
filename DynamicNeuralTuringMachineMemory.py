@@ -104,7 +104,7 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
 
     def _reset_memory_content(self):
         """This method exists to implement the memory reset at the beginning of each episode."""
-        self.memory_contents = torch.randn_like(self.memory_contents) * 0.1
+        self.memory_contents.fill_(0)
         self.memory_contents.detach_()
         # self.memory_contents = torch.zeros_like(self.memory_contents)  # alternative
 
