@@ -25,7 +25,7 @@ class DynamicNeuralTuringMachine(nn.Module):
         self.controller = CustomGRU(input_size=controller_input_size,
                                     hidden_size=controller_hidden_state_size,
                                     memory_size=memory.overall_memory_size)
-        self.W_output = nn.Parameter(torch.zeros(controller_output_size, self.memory.memory_contents.shape[1]))
+        self.W_output = nn.Parameter(torch.zeros(controller_output_size, self.memory.overall_memory_size))
         self.b_output = nn.Parameter(torch.zeros(controller_output_size, 1))
         # self.W_output.register_hook(print)
         # self.b_output.register_hook(print)
@@ -54,9 +54,7 @@ class DynamicNeuralTuringMachine(nn.Module):
         # self.memory_reading.register_hook(print)
         self.memory.update(self.controller_hidden_state, x)
         self.controller_hidden_state = self.controller(x, self.controller_hidden_state, self.memory_reading)
-        address_size = self.memory.memory_addresses.shape[1]
-        self.sliced_memory_reading = self.memory_reading[address_size:, :]
-        output = F.log_softmax(self.W_output @ self.sliced_memory_reading + self.b_output, dim=0)
+        output = F.log_softmax(self.W_output @ self.memory_reading + self.b_output, dim=0)
         return self.controller_hidden_state, output
 
     def _init_parameters(self, init_function):
