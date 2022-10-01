@@ -54,9 +54,8 @@ class DynamicNeuralTuringMachine(nn.Module):
         # self.memory_reading.register_hook(print)
         self.memory.update(self.controller_hidden_state, x)
         self.controller_hidden_state = self.controller(x, self.controller_hidden_state, self.memory_reading)
-        mu = self.memory_reading.mean(axis=1)
-        sigma = self.memory_reading.std(dim=1)
-        self.normalized_memory_reading = ((self.memory_reading.T - mu) / sigma).T
+        readings_norm = torch.linalg.norm(self.memory_reading, dim=0)
+        self.normalized_memory_reading = self.memory_reading / readings_norm
         output = F.log_softmax(self.W_output @ self.normalized_memory_reading + self.b_output, dim=0)
         return self.controller_hidden_state, output
 
