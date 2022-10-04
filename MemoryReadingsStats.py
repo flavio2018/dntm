@@ -13,6 +13,7 @@ class MemoryReadingsStats:
 		self.kl_divergence = None
 		self.random_projections = None
 		self.random_matrix = None
+		os.mkdir(self.path)
 
 
 	def load_memory_readings(self, epoch):
