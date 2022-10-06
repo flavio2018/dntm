@@ -42,10 +42,6 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
         self.u_hidden_content_alpha = nn.Parameter(torch.zeros(size=(1, controller_hidden_state_size)))
         self.b_content_alpha = nn.Parameter(torch.zeros(1))
 
-        # content summary
-        self.W_content_summary = nn.Parameter(torch.zeros((n_locations, self.overall_memory_size)))
-        self.b_content_summary = nn.Parameter(torch.zeros(self.overall_memory_size))
-
     def read(self, controller_hidden_state):
         logging.debug("Reading memory")
         self.read_weights = self._address_memory(controller_hidden_state)
@@ -53,9 +49,6 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
         # this implements the memory NO-OP at reading phase
         return self._full_memory_view()[:-1, :].T @ self.read_weights[:-1, :]
         # TODO add in tests NO-OP
-
-    def get_content_summary(self):
-        return torch.sigmoid(self.memory_contents.T @ self.W_content_summary + self.b_content_summary)
 
     def update(self, controller_hidden_state, controller_input):
         logging.debug("Updating memory")
