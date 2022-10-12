@@ -66,33 +66,23 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
                                         + self.write_weights[:-1, :] @ candidate_content_vector.T)
 
     def _address_memory(self, controller_hidden_state):
-        logging.debug("Addressing memory")
-        logging.debug(f"Memory allocated: {str(torch.cuda.memory_allocated(controller_hidden_state.device))} B")
-        logging.debug(f"Memory reserved: {str(torch.cuda.memory_reserved(controller_hidden_state.device))} B")
-        projected_hidden_state = self.W_hat_hidden @ controller_hidden_state
-        query = self.W_query.T @ projected_hidden_state + self.b_query
-        sharpening_beta = F.softplus(self.u_sharpen.T @ controller_hidden_state + self.b_sharpen) + 1
-        similarity_vector = self._compute_similarity(query, sharpening_beta)
-        address_vector = self._apply_lru_addressing(similarity_vector, controller_hidden_state)
-        return address_vector
+        self.projected_hidden_state = self.W_hat_hidden @ controller_hidden_state
+        self.query = self.W_query.T @ self.projected_hidden_state + self.b_query
+        self.sharpening_beta = F.softplus(self.u_sharpen.T @ controller_hidden_state + self.b_sharpen) + 1
+        
+        # compute similarity
+        full_memory_view = self._full_memory_view()
+        self.similarity_vector = self.sharpening_beta * F.cosine_similarity(full_memory_view[:, None, :], self.query.T[None, :, :],
+                                                                  eps=1e-7, dim=-1)
+        # lru mechanism
+        self.lru_gamma = torch.sigmoid(self.u_lru.T @ controller_hidden_state + self.b_lru)
+        self.lru_similarity_vector = F.softmax(self.similarity_vector - self.lru_gamma * self.exp_mov_avg_similarity, dim=0)
+        with torch.no_grad():
+            self.exp_mov_avg_similarity = 0.1 * self.exp_mov_avg_similarity + 0.9 * self.similarity_vector
+        return self.lru_similarity_vector
 
     def _full_memory_view(self):
         return torch.cat((self.memory_addresses, self.memory_contents), dim=1)
-
-    def _compute_similarity(self, query, sharpening_beta):
-        """Compute the sharpened cosine similarity vector between the query and the memory locations."""
-        full_memory_view = self._full_memory_view()
-        return sharpening_beta * F.cosine_similarity(full_memory_view[:, None, :], query.T[None, :, :],
-                                                     eps=1e-7, dim=-1)
-
-    def _apply_lru_addressing(self, similarity_vector, controller_hidden_state):
-        """Apply the Least Recently Used addressing mechanism. This shifts the addressing towards positions
-        that have not been recently read or written."""
-        lru_gamma = torch.sigmoid(self.u_lru.T @ controller_hidden_state + self.b_lru)
-        lru_similarity_vector = F.softmax(similarity_vector - lru_gamma * self.exp_mov_avg_similarity, dim=0)
-        with torch.no_grad():
-            self.exp_mov_avg_similarity = 0.1 * self.exp_mov_avg_similarity + 0.9 * similarity_vector
-        return lru_similarity_vector
 
     def _reset_memory_content(self):
         """This method exists to implement the memory reset at the beginning of each episode."""

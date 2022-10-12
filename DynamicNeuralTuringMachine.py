@@ -51,8 +51,8 @@ class DynamicNeuralTuringMachine(nn.Module):
         self.memory_reading = self.memory.read(self.controller_hidden_state)
         self.memory.update(self.controller_hidden_state, x)
         self.controller_hidden_state = self.controller(x, self.controller_hidden_state, self.memory_reading)
-        output = F.log_softmax(self.W_output @ self.controller_hidden_state + self.b_output, dim=0)
-        return self.controller_hidden_state, output
+        self.output = F.log_softmax(self.W_output @ self.controller_hidden_state + self.b_output, dim=0)
+        return self.controller_hidden_state, self.output
 
     def _init_parameters(self, init_function):
         logging.info(f"Initialization method: {init_function.__name__}")
@@ -84,6 +84,7 @@ class DynamicNeuralTuringMachine(nn.Module):
         with torch.no_grad():
             controller_hidden_state_size = self.W_output.shape[1]
         self.register_buffer("controller_hidden_state", torch.zeros(size=(controller_hidden_state_size, batch_size), device=device))
+        self.register_buffer("output", torch.zeros(size=self.W_output[0], batch_size))
 
     
 def build_dntm(cfg, device):
