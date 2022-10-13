@@ -26,7 +26,7 @@ class DynamicNeuralTuringMachine(nn.Module):
                                     hidden_size=controller_hidden_state_size,
                                     memory_size=memory.overall_memory_size)
         self.W_output = nn.Parameter(torch.zeros(controller_output_size, controller_hidden_state_size))
-        self.b_output = nn.Parameter(torch.zeros(controller_output_size, 1))
+        self.b_output = nn.Parameter(torch.zeros(1, controller_output_size))
 
         self._init_parameters(init_function=nn.init.xavier_uniform_)
 
@@ -44,15 +44,15 @@ class DynamicNeuralTuringMachine(nn.Module):
         
         for i_seq in range(seq_len):
             batch_element = batch[:, i_seq, :].reshape(feature_size, batch_size)
-            controller_hidden_state, output = self.step_on_batch_element(batch_element)
-        return controller_hidden_state, output
+            output = self.step_on_batch_element(batch_element)
+        return output
 
     def step_on_batch_element(self, x):
         self.memory_reading = self.memory.read(self.controller_hidden_state)
         self.memory.update(self.controller_hidden_state, x)
         self.controller_hidden_state = self.controller(x, self.controller_hidden_state, self.memory_reading)
-        self.output = F.log_softmax(self.W_output @ self.controller_hidden_state + self.b_output, dim=0)
-        return self.controller_hidden_state, self.output
+        self.output = self.controller_hidden_state.T @ self.W_output.T + self.b_output
+        return self.output
 
     def _init_parameters(self, init_function):
         logging.info(f"Initialization method: {init_function.__name__}")
@@ -84,7 +84,7 @@ class DynamicNeuralTuringMachine(nn.Module):
         with torch.no_grad():
             controller_hidden_state_size = self.W_output.shape[1]
         self.register_buffer("controller_hidden_state", torch.zeros(size=(controller_hidden_state_size, batch_size), device=device))
-        self.register_buffer("output", torch.zeros(size=self.W_output[0], batch_size))
+        self.register_buffer("output", torch.zeros(size=(self.W_output[0], batch_size)))
 
     
 def build_dntm(cfg, device):
