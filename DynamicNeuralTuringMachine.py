@@ -30,13 +30,13 @@ class DynamicNeuralTuringMachine(nn.Module):
 
         self._init_parameters(init_function=nn.init.xavier_uniform_)
 
-    def forward(self, input):
+    def forward(self, input, hidden_mask, reading_mask):
         if len(input.shape) == 2:
-            return self.step_on_batch_element(input)
+            return self.step_on_batch_element(input, hidden_mask, reading_mask)
         elif len(input.shape) == 3:
-            return self.step_on_batch(input)
+            return self.step_on_batch(input, hidden_mask, reading_mask)
 
-    def step_on_batch(self, batch):
+    def step_on_batch(self, batch, hidden_mask, reading_mask):
         """Note: the batch is assumed to conform to the batch_first convention of PyTorch, i.e. the first dimension of the batch
         is the batch size, the second one is the sequence length and the third one is the feature size."""
         logging.debug(f"Looping through image pixels")
@@ -47,8 +47,10 @@ class DynamicNeuralTuringMachine(nn.Module):
             output = self.step_on_batch_element(batch_element)
         return output
 
-    def step_on_batch_element(self, x):
+    def step_on_batch_element(self, x, hidden_mask, reading_mask):
+        self.controller_hidden_state = self.controller_hidden_state * hidden_mask.T
         self.memory_reading = self.memory.read(self.controller_hidden_state)
+        self.memory_reading = self.memory_reading * reading_mask.T
         self.memory.update(self.controller_hidden_state, x)
         self.controller_hidden_state = self.controller(x, self.controller_hidden_state, self.memory_reading)
         self.output = self.controller_hidden_state.T @ self.W_output.T + self.b_output
@@ -84,7 +86,10 @@ class DynamicNeuralTuringMachine(nn.Module):
         with torch.no_grad():
             controller_hidden_state_size = self.W_output.shape[1]
         self.register_buffer("controller_hidden_state", torch.zeros(size=(controller_hidden_state_size, batch_size), device=device))
-        self.register_buffer("output", torch.zeros(size=(self.W_output[0], batch_size)))
+        self.register_buffer("output", torch.zeros(size=(self.W_output.shape[0], batch_size)))
+
+    def set_states(self, h_dict):
+        self.controller_hidden_state = torch.concat([h for _, h in h_dict.items()], dim=1)
 
     
 def build_dntm(cfg, device):
