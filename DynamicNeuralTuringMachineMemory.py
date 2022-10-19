@@ -2,7 +2,6 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 import logging
-from .utils import print_if_nan
 
 
 class DynamicNeuralTuringMachineMemory(nn.Module):
@@ -128,3 +127,9 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
         raise RuntimeError("It makes no sense to call the memory module on its own. "
                            "The module should be accessed by the controller "
                            "either by addressing, reading or updating the memory.")
+
+
+def print_if_nan(x):
+    if torch.isnan(x).any():
+        print("NaN found!")
+        print(x)

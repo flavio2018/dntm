@@ -15,8 +15,7 @@ import torch.nn.functional as F
 import logging
 
 from .CustomGRU import CustomGRU
-from .DynamicNeuralTuringMachineMemory import DynamicNeuralTuringMachineMemory
-from .utils import print_if_nan
+from .DynamicNeuralTuringMachineMemory import DynamicNeuralTuringMachineMemory, print_if_nan
 
 
 class DynamicNeuralTuringMachine(nn.Module):
