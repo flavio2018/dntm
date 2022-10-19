@@ -16,6 +16,7 @@ import logging
 
 from .CustomGRU import CustomGRU
 from .DynamicNeuralTuringMachineMemory import DynamicNeuralTuringMachineMemory
+from .utils import print_if_nan
 
 
 class DynamicNeuralTuringMachine(nn.Module):
@@ -52,10 +53,13 @@ class DynamicNeuralTuringMachine(nn.Module):
     def step_on_batch_element(self, x):
         self.memory_reading = self.memory.read(self.controller_hidden_state)
         # self.memory_reading.register_hook(print)
+        print_if_nan(self.memory_reading)
         self.memory.update(self.controller_hidden_state, x)
         self.controller_hidden_state = self.controller(x, self.controller_hidden_state, self.memory_reading)
-        output = F.log_softmax(self.W_output @ self.memory_reading + self.b_output, dim=0)
-        return self.controller_hidden_state, output
+        print_if_nan(self.controller_hidden_state)
+        self.output = F.log_softmax(self.W_output @ self.memory_reading + self.b_output, dim=0)
+        print_if_nan(self.output)
+        return self.controller_hidden_state, self.output
 
     def _init_parameters(self, init_function):
         logging.info(f"Initialization method: {init_function.__name__}")
@@ -87,6 +91,7 @@ class DynamicNeuralTuringMachine(nn.Module):
         with torch.no_grad():
             controller_hidden_state_size = self.controller.W_ir.shape[0]
         self.register_buffer("controller_hidden_state", torch.zeros(size=(controller_hidden_state_size, batch_size), device=device))
+        self.register_buffer("output", torch.zeros(size=(self.W_output.shape[0], batch_size)))
 
 
 def build_dntm(cfg, device):

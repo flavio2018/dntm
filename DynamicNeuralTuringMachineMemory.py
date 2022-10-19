@@ -2,6 +2,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 import logging
+from .utils import print_if_nan
 
 
 class DynamicNeuralTuringMachineMemory(nn.Module):
@@ -45,6 +46,7 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
     def read(self, controller_hidden_state):
         logging.debug("Reading memory")
         self.read_weights = self._address_memory(controller_hidden_state)
+        print_if_nan(self.read_weights)
         # self.read_weights.register_hook(print)
         # this implements the memory NO-OP at reading phase
         return self._full_memory_view()[:-1, :].T @ self.read_weights[:-1, :]
@@ -54,26 +56,36 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
         logging.debug("Updating memory")
         sigmoid = torch.nn.Sigmoid()
         self.write_weights = self._address_memory(controller_hidden_state)
+        print_if_nan(self.write_weights)
         self.erase_vector = self.W_erase @ controller_hidden_state + self.b_erase  # TODO MLP        
+        print_if_nan(self.erase_vector)
         self.alpha = sigmoid(self.u_input_content_alpha @ controller_input +
                         self.u_hidden_content_alpha @ controller_hidden_state + self.b_content_alpha)
+        print_if_nan(self.alpha)
         self.candidate_content_vector = F.relu(self.W_content_hidden @ controller_hidden_state +
                                           torch.mul(self.alpha, self.W_content_input @ controller_input))
+        print_if_nan(self.candidate_content_vector)
 
         # this implements the memory NO-OP at writing phase
         self.memory_contents[:-1, :] = (self.memory_contents[:-1, :]
                                         - self.write_weights[:-1, :] @ self.erase_vector.T
                                         + self.write_weights[:-1, :] @ self.candidate_content_vector.T)
+        print_if_nan(self.memory_contents)
 
     def _address_memory(self, controller_hidden_state):
         logging.debug("Addressing memory")
         logging.debug(f"Memory allocated: {str(torch.cuda.memory_allocated(controller_hidden_state.device))} B")
         logging.debug(f"Memory reserved: {str(torch.cuda.memory_reserved(controller_hidden_state.device))} B")
         self.projected_hidden_state = self.W_hat_hidden @ controller_hidden_state
+        print_if_nan(self.projected_hidden_state)
         self.query = self.W_query.T @ self.projected_hidden_state + self.b_query
+        print_if_nan(self.query)
         self.sharpening_beta = F.softplus(self.u_sharpen.T @ controller_hidden_state + self.b_sharpen) + 1
+        print_if_nan(self.sharpening_beta)
         self.similarity_vector = self._compute_similarity(self.query, self.sharpening_beta)
+        print_if_nan(self.similarity_vector)
         self.address_vector = self._apply_lru_addressing(self.similarity_vector, controller_hidden_state)
+        print_if_nan(self.address_vector)
         return self.address_vector
 
     def _full_memory_view(self):
@@ -89,9 +101,12 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
         """Apply the Least Recently Used addressing mechanism. This shifts the addressing towards positions
         that have not been recently read or written."""
         self.lru_gamma = torch.sigmoid(self.u_lru.T @ controller_hidden_state + self.b_lru)
+        print_if_nan(self.lru_gamma)
         self.lru_similarity_vector = F.softmax(similarity_vector - self.lru_gamma * self.exp_mov_avg_similarity, dim=0)
+        print_if_nan(self.lru_similarity_vector)
         with torch.no_grad():
             self.exp_mov_avg_similarity = 0.1 * self.exp_mov_avg_similarity + 0.9 * similarity_vector
+        print_if_nan(self.exp_mov_avg_similarity)
         return self.lru_similarity_vector
 
     def _reset_memory_content(self):
