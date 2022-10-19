@@ -1,4 +1,5 @@
 import torch
+from .DynamicNeuralTuringMachineMemory import print_if_nan
 
 
 class CustomGRU(torch.nn.Module):
@@ -41,5 +42,9 @@ class CustomGRU(torch.nn.Module):
         self.n = tanh(self.W_in @ input + self.b_in +
                  self.W_mn @ memory_reading + self.b_mn
                  + self.r * (self.W_hn @ hidden + self.b_hn))
+        print_if_nan(self.r)
+        print_if_nan(self.z)
+        print_if_nan(self.n)
+
         return (1 - self.z) * self.n + self.z * hidden
 
