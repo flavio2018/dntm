@@ -32,14 +32,14 @@ class CustomGRU(torch.nn.Module):
         sigm = torch.nn.Sigmoid()
         tanh = torch.nn.Tanh()
 
-        r = sigm(self.W_ir @ input + self.b_ir +
+        self.r = sigm(self.W_ir @ input + self.b_ir +
                  self.W_hr @ hidden + self.b_hr +
                  self.W_mr @ memory_reading + self.b_mr)
-        z = sigm(self.W_iz @ input + self.b_iz +
+        self.z = sigm(self.W_iz @ input + self.b_iz +
                  self.W_hz @ hidden + self.b_hz +
                  self.W_mz @ memory_reading + self.b_mz)
-        n = tanh(self.W_in @ input + self.b_in +
+        self.n = tanh(self.W_in @ input + self.b_in +
                  self.W_mn @ memory_reading + self.b_mn
-                 + r * (self.W_hn @ hidden + self.b_hn))
-        return (1 - z) * n + z * hidden
+                 + self.r * (self.W_hn @ hidden + self.b_hn))
+        return (1 - self.z) * self.n + self.z * hidden
 
