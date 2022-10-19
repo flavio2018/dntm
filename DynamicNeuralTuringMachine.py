@@ -82,9 +82,9 @@ class DynamicNeuralTuringMachine(nn.Module):
 
     def _reshape_and_reset_hidden_states(self, batch_size, device):
         with torch.no_grad():
-            controller_hidden_state_size = self.W_output.shape[1]
+            controller_hidden_state_size = self.controller.W_ir.shape[0]
         self.register_buffer("controller_hidden_state", torch.zeros(size=(controller_hidden_state_size, batch_size), device=device))
-        self.register_buffer("output", torch.zeros(size=self.W_output[0], batch_size))
+        self.register_buffer("output", torch.zeros(size=(self.W_output.shape[0], batch_size)))
 
     
 def build_dntm(cfg, device):
