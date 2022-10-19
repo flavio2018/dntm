@@ -52,21 +52,18 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
 
     def update(self, controller_hidden_state, controller_input):
         logging.debug("Updating memory")
-        tanh = torch.nn.Tanh()
         sigmoid = torch.nn.Sigmoid()
         self.write_weights = self._address_memory(controller_hidden_state)
-        erase_vector = tanh(self.W_erase @ controller_hidden_state + self.b_erase)  # TODO MLP
-
-        alpha = sigmoid(self.u_input_content_alpha @ controller_input +
+        self.erase_vector = self.W_erase @ controller_hidden_state + self.b_erase  # TODO MLP        
+        self.alpha = sigmoid(self.u_input_content_alpha @ controller_input +
                         self.u_hidden_content_alpha @ controller_hidden_state + self.b_content_alpha)
-
-        candidate_content_vector = tanh(self.W_content_hidden @ controller_hidden_state +
-                                          torch.mul(alpha, self.W_content_input @ controller_input))
+        self.candidate_content_vector = F.relu(self.W_content_hidden @ controller_hidden_state +
+                                          torch.mul(self.alpha, self.W_content_input @ controller_input))
 
         # this implements the memory NO-OP at writing phase
         self.memory_contents[:-1, :] = (self.memory_contents[:-1, :]
-                                        - self.write_weights[:-1, :] @ erase_vector.T
-                                        + self.write_weights[:-1, :] @ candidate_content_vector.T)
+                                        - self.write_weights[:-1, :] @ self.erase_vector.T
+                                        + self.write_weights[:-1, :] @ self.candidate_content_vector.T)
 
     def _address_memory(self, controller_hidden_state):
         logging.debug("Addressing memory")
