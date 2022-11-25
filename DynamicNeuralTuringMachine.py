@@ -19,7 +19,7 @@ from model.dntm.DynamicNeuralTuringMachineMemory import DynamicNeuralTuringMachi
 
 
 class DynamicNeuralTuringMachine(nn.Module):
-    def __init__(self, memory, controller_hidden_state_size, controller_input_size, controller_output_size=10):
+    def __init__(self, memory, controller_hidden_state_size, controller_input_size, batch_size, controller_output_size=10):
         super(DynamicNeuralTuringMachine, self).__init__()
         self.add_module("memory", memory)
         self.controller = CustomGRU(input_size=controller_input_size,
@@ -27,7 +27,8 @@ class DynamicNeuralTuringMachine(nn.Module):
                                     memory_size=memory.overall_memory_size)
         self.W_output = nn.Parameter(torch.zeros(controller_output_size, controller_hidden_state_size))
         self.b_output = nn.Parameter(torch.zeros(1, controller_output_size))
-
+        self.register_buffer("controller_hidden_state", torch.zeros(size=(controller_hidden_state_size, batch_size), device=device))
+        
         self._init_parameters(init_function=nn.init.xavier_uniform_)
 
     def forward(self, x):

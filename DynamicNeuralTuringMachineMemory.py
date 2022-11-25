@@ -5,13 +5,14 @@ import logging
 
 
 class DynamicNeuralTuringMachineMemory(nn.Module):
-    def __init__(self, n_locations, content_size, address_size, controller_input_size, controller_hidden_state_size):
+    def __init__(self, n_locations, content_size, address_size, controller_input_size, controller_hidden_state_size, batch_size):
         """Instantiate the memory.
         n_locations: number of memory locations
         content_size: size of the content part of memory locations
         address_size: size of the address part of memory locations"""
         super(DynamicNeuralTuringMachineMemory, self).__init__()
 
+        self.register_buffer("exp_mov_avg_similarity", torch.zeros(size=(n_locations, batch_size), device=device))
         self.register_buffer("memory_contents", torch.zeros(size=(n_locations, content_size)))
         # self.memory_contents = nn.Parameter(torch.zeros(size=(n_locations, content_size)), requires_grad=False)
         self.memory_addresses = nn.Parameter(torch.zeros(size=(n_locations, address_size)), requires_grad=True)
