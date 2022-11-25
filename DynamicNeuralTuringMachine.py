@@ -49,8 +49,8 @@ class DynamicNeuralTuringMachine(nn.Module):
 
     def step_on_batch_element(self, x):
         self.memory_reading = self.memory.read(self.controller_hidden_state)
-        self.memory.update(self.controller_hidden_state, x)
-        self.controller_hidden_state = self.controller(x, self.controller_hidden_state, self.memory_reading)
+        self.memory.update(self.controller_hidden_state, x.T)
+        self.controller_hidden_state = self.controller(x.T, self.controller_hidden_state, self.memory_reading)
         self.output = self.controller_hidden_state.T @ self.W_output.T + self.b_output
         return self.output
 
