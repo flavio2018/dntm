@@ -94,6 +94,12 @@ class DynamicNeuralTuringMachine(nn.Module):
         h_list_sorted = sorted(h_list, key=lambda x: x[0])
 
         self.controller_hidden_state = torch.concat([h for _, h in h_list_sorted], dim=1)
+    
+    def detach_states(self):
+        self.memory._reset_memory_content()
+        self.controller_hidden_state.fill_(0)
+        self.memory.exp_mov_avg_similarity.fill_(0)
+        self.controller_hidden_state.detach_()
 
     
 def build_dntm(cfg, device):
