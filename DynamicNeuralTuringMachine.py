@@ -87,7 +87,13 @@ class DynamicNeuralTuringMachine(nn.Module):
         self.register_buffer("output", torch.zeros(size=(self.W_output.shape[0], batch_size)))
 
     def set_states(self, h_dict):
-        self.controller_hidden_state = torch.concat([h for _, h in h_dict.items()], dim=1)
+        # make lists to sort
+        h_list = [(i, h) for i, h in h_dict.items()]
+
+        # sort
+        h_list_sorted = sorted(h_list, key=lambda x: x[0])
+
+        self.controller_hidden_state = torch.concat([h for _, h in h_list_sorted], dim=1)
 
     
 def build_dntm(cfg, device):
