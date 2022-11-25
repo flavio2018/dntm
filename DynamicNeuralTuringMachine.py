@@ -27,7 +27,7 @@ class DynamicNeuralTuringMachine(nn.Module):
                                     memory_size=memory.overall_memory_size)
         self.W_output = nn.Parameter(torch.zeros(controller_output_size, controller_hidden_state_size))
         self.b_output = nn.Parameter(torch.zeros(1, controller_output_size))
-        self.register_buffer("controller_hidden_state", torch.zeros(size=(controller_hidden_state_size, batch_size), device=device))
+        self.register_buffer("controller_hidden_state", torch.zeros(size=(controller_hidden_state_size, batch_size)))
         
         self._init_parameters(init_function=nn.init.xavier_uniform_)
 
