@@ -30,13 +30,13 @@ class DynamicNeuralTuringMachine(nn.Module):
 
         self._init_parameters(init_function=nn.init.xavier_uniform_)
 
-    def forward(self, input, hidden_mask, reading_mask):
-        if len(input.shape) == 2:
-            return self.step_on_batch_element(input, hidden_mask, reading_mask)
-        elif len(input.shape) == 3:
-            return self.step_on_batch(input, hidden_mask, reading_mask)
+    def forward(self, x):
+        if len(x.shape) == 2:
+            return self.step_on_batch_element(x)
+        elif len(x.shape) == 3:
+            return self.step_on_batch(x)
 
-    def step_on_batch(self, batch, hidden_mask, reading_mask):
+    def step_on_batch(self, batch):
         """Note: the batch is assumed to conform to the batch_first convention of PyTorch, i.e. the first dimension of the batch
         is the batch size, the second one is the sequence length and the third one is the feature size."""
         logging.debug(f"Looping through image pixels")
@@ -47,10 +47,8 @@ class DynamicNeuralTuringMachine(nn.Module):
             output = self.step_on_batch_element(batch_element)
         return output
 
-    def step_on_batch_element(self, x, hidden_mask, reading_mask):
-        self.controller_hidden_state = self.controller_hidden_state * hidden_mask.T
+    def step_on_batch_element(self, x):
         self.memory_reading = self.memory.read(self.controller_hidden_state)
-        self.memory_reading = self.memory_reading * reading_mask.T
         self.memory.update(self.controller_hidden_state, x)
         self.controller_hidden_state = self.controller(x, self.controller_hidden_state, self.memory_reading)
         self.output = self.controller_hidden_state.T @ self.W_output.T + self.b_output
@@ -110,7 +108,7 @@ def build_dntm(cfg, device):
 
     if cfg.model.ckpt is not None:
         logging.info(f"Reloading from checkpoint: {cfg.model.ckpt}")
-        state_dict = torch.load(cfg.model.ckpt, map_location=torch.device(cfg.run.device))
+        state_dict = torch.load(cfg.model.ckpt, p_location=torch.device(cfg.run.device))
         batch_size_ckpt = state_dict['controller_hidden_state'].shape[1]
         dntm.memory._reset_memory_content()
         dntm._reshape_and_reset_hidden_states(batch_size=batch_size_ckpt, device=device)
