@@ -99,7 +99,8 @@ class DynamicNeuralTuringMachine(nn.Module):
     def detach_states(self):
         self.memory._reset_memory_content()
         self.controller_hidden_state.fill_(0)
-        self.memory.exp_mov_avg_similarity.fill_(0)
+        self.memory.read_head.exp_mov_avg_similarity.fill_(0)
+        self.memory.write_head.exp_mov_avg_similarity.fill_(0)
         self.controller_hidden_state.detach_()
 
     
