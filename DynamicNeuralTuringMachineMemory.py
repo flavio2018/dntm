@@ -29,8 +29,8 @@ class MemoryHead(nn.Module):
         self.sharpening_beta = F.softplus(self.u_sharpen.T @ h + self.b_sharpen) + 1
         
         # compute similarity
-        self.similarity_vector = self.sharpening_beta * F.cosine_similarity(M[:, None, :], self.query.T[None, :, :],
-                                                                            eps=1e-7, dim=-1)
+        self.similarity_vector = self.sharpening_beta * F.cosine_similarity(M, self.query.T[:, None, :],
+                                                                            eps=1e-7, dim=-1).T
         # lru mechanism
         self.lru_gamma = torch.sigmoid(self.u_lru.T @ h + self.b_lru)
         self.lru_similarity_vector = F.softmax(self.similarity_vector - self.lru_gamma * self.exp_mov_avg_similarity, dim=0)
@@ -51,8 +51,8 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
         address_size: size of the address part of memory locations"""
         super(DynamicNeuralTuringMachineMemory, self).__init__()
 
-        self.register_buffer("memory_contents", torch.zeros(size=(n_locations, content_size)))
-        self.memory_addresses = nn.Parameter(torch.zeros(size=(n_locations, address_size)), requires_grad=True)
+        self.register_buffer("memory_contents", torch.zeros(size=(batch_size, n_locations, content_size)))
+        self.memory_addresses = nn.Parameter(torch.zeros(size=(batch_size, n_locations, address_size)), requires_grad=True)
         self.overall_memory_size = content_size + address_size
 
         self.read_head = MemoryHead(
@@ -82,7 +82,8 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
         logging.debug("Reading memory")
         self.read_weights = self.read_head(controller_hidden_state, self._full_memory_view())
         # this implements the memory NO-OP at reading phase
-        return self._full_memory_view()[:-1, :].T @ self.read_weights[:-1, :]
+        # M is (BS, R, C), r_w is (BS, R), we want (BS, C)
+        return (self._full_memory_view()[:, :-1].mT @ self.read_weights[:-1].T.unsqueeze(2)).squeeze().T
         # TODO add in tests NO-OP
 
     def update(self, controller_hidden_state, controller_input):
@@ -94,15 +95,15 @@ class DynamicNeuralTuringMachineMemory(nn.Module):
                  self.u_hidden_content_alpha @ controller_hidden_state + self.b_content_alpha)
 
         self.candidate_content_vector = F.relu(self.W_content_hidden @ controller_hidden_state +
-                                          torch.mul(self.alpha, self.W_content_input @ controller_input))
+                                               torch.mul(self.alpha, self.W_content_input @ controller_input))
 
         # this implements the memory NO-OP at writing phase
-        self.memory_contents[:-1, :] = (self.memory_contents[:-1, :]
-                                        - self.write_weights[:-1, :] @ self.erase_vector.T
-                                        + self.write_weights[:-1, :] @ self.candidate_content_vector.T)
+        self.memory_contents[:, :-1, :] = (self.memory_contents[:, :-1, :]
+                                           - self.write_weights[:-1, :] @ self.erase_vector.T
+                                           + self.write_weights[:-1, :] @ self.candidate_content_vector.T)
 
     def _full_memory_view(self):
-        return torch.cat((self.memory_addresses, self.memory_contents), dim=1)
+        return torch.cat((self.memory_addresses, self.memory_contents), dim=2)
 
     def _reset_memory_content(self):
         """This method exists to implement the memory reset at the beginning of each episode."""
